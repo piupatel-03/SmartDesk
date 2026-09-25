@@ -1,7 +1,6 @@
 import csv
 
 from django.core.management.base import BaseCommand
-from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware, get_current_timezone
 from datetime import datetime
 from triage.models import Ticket, Customer
@@ -17,19 +16,31 @@ def parse_csv_datetime(value):
         return None
 
     formats = [
-        "%y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M:%S",
         "%Y-%m-%d %H:%M",
-        
+        "%Y/%m/%d %H:%M",
+        "%d/%m/%Y %H:%M",
+        "%d-%m-%Y %H:%M",
+        "%b %d, %Y %I:%M %p",
     ]
+    
+
+    for date_format in formats:
+        try:
+            return datetime.strptime(value, date_format)
+        except ValueError:
+            continue
+
+    return None
 
 def clean_category(category):
     value = category.strip().lower()
 
     category_map = {
-        "payment" : "Payment",
-        "payments" : "Payment",
-        "payment" : "Payment",
-        "payment" : "Payment",
+        "payment": "Payment",
+        "payments": "Payment",
+        "paymnt": "Payment",
+        "paymnet": "Payment",
 
         "technical" : "Technical",
         "tech" : "Technical",
@@ -56,7 +67,7 @@ def clean_category(category):
     }
 
     return category_map.get(value)
-
+  
 def clean_status(status):
     value = status.strip().lower()
 
@@ -65,8 +76,9 @@ def clean_status(status):
         "in progress" : "In Progress",
         "in-progress" : "In Progress",
         "wip" : "In Progress",
-        "resolved" : "REsolved",
+        "resolved" : "Resolved",
         "closed" : "Closed",
+        "done" : "Resolved",
 
     }
 
@@ -176,7 +188,7 @@ class Command(BaseCommand):
                     continue
 
                 # Parse created_at
-                created_datetime = parse_datetime(created_at)
+                created_datetime = parse_csv_datetime(created_at)
 
                 if created_datetime is None:
                     flagged += 1
@@ -196,7 +208,7 @@ class Command(BaseCommand):
                 resolved_datetime = None
 
                 if resolved_at:
-                    resolved_datetime = parse_datetime(resolved_at)
+                    resolved_datetime = parse_csv_datetime(resolved_at)
 
                     if resolved_datetime is None:
                         flagged += 1
