@@ -37,6 +37,14 @@ class TicketListCreateView(generics.ListCreateAPIView):
 
         return Ticket.objects.none()
 
+    def perform_create(self, serializer):
+        user = self.request.user
+
+        if user.groups.filter(name="Agent").exists():
+            serializer.save(assigned_agent=user)
+        else:
+            serializer.save()
+
     
 
 class CustomLoginView(TokenObtainPairView):    
@@ -84,6 +92,17 @@ class TicketDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         return Ticket.objects.none()
 
+    def perform_destroy(self, instance):
+        if instance.status == "Closed":
+            from rest_framework.exceptions import ValidationError
+
+            raise ValidationError(
+                {"detail": "Closed tickets cannot be deleted."}
+            )
+
+        instance.delete()
+
+        
 class TicketStatsView(APIView):
     permission_classes = [IsManagerOrAgent]
 

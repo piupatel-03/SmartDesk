@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 import os
 from pathlib import Path
 from datetime import timedelta
+from django.conf import settings
+from celery.schedules import crontab
+
 
 
 
@@ -46,6 +49,7 @@ INSTALLED_APPS = [
     'channels',
     'django_filters',
     'triage',
+
 ]
 
 MIDDLEWARE = [
@@ -56,6 +60,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'triage.middleware.RequestTrackingMiddleware',
+
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -76,6 +82,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+ASGI_APPLICATION = "config.asgi.application"
 
 
 # Database
@@ -125,6 +132,7 @@ TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 
 USE_TZ = True
+MAINTENANCE_MODE = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -155,3 +163,41 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
 }
+
+LOGGING = {
+    "version" : 1,
+    "disable_existing_loggers" : False,
+    "handlers" : {
+        "file" : {
+            "class" : "logging.FileHandler",
+            "filename" : BASE_DIR / "logs" / "requests.log",
+        },
+    },
+    "loggers" : {
+        "smartdesk" : {
+            "handlers" : ["file"],
+            "level" : "INFO",
+            "propagate" : False,
+        },
+    },
+}
+DEFAULT_FROM_EMAIL = "smartdesk@example.com"
+
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+
+CELERY_TIMEZONE = "Asia/Kolkata"
+CELERY_TASK_TRACK_STARTED = True
+
+CELERT_BEAT_SCHEDULE = {
+    "scan-sla-breaches-every-5-minutes":{
+        "task" : "triage.tasks.scan_sla_breaches",
+        "schedule" : 300.0,
+    },
+
+    "generate-daily-report-9am":{
+        "task" : "triage.tasks.generate_daily_report",
+        "schedule" : crontab(hour=9, minute=0),
+    },
+}
+

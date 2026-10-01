@@ -3,10 +3,12 @@ from django.contrib.auth.models import User
 
 from .models import Customer, Ticket, TicketEvent, DailyReport
 
+
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
         fields = "__all__"
+
 
 class TicketSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,6 +17,7 @@ class TicketSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         from .services.priority import get_priority_with_repeat_customer
+        from .tasks import send_ticket_acknowledgement
 
         ticket = Ticket(**validated_data)
         ticket.save()
@@ -22,9 +25,20 @@ class TicketSerializer(serializers.ModelSerializer):
         ticket.priority = get_priority_with_repeat_customer(ticket)
         ticket.save(update_fields=["priority"])
 
-        return ticket    
+        if ticket.customer.email:
+            send_ticket_acknowledgement.delay(
+                ticket.ticket_id,
+                ticket.customer.email,
+            )
+
+        return ticket
 
     def update(self, instance, validated_data):
+        if instance.status == "Closed":
+            raise serializers.ValidationError(
+                {"detail": "Closed tickets cannot be modified."}
+            )
+
         from .services.ticket import update_ticket_status
 
         new_status = validated_data.get("status")
@@ -40,20 +54,20 @@ class TicketSerializer(serializers.ModelSerializer):
 
         return instance
 
+
 class TicketEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = TicketEvent
         fields = "__all__"
+
 
 class DailyReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = DailyReport
         fields = "__all__"
 
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "email"]
-
-
-
