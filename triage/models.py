@@ -115,6 +115,9 @@ class DailyReport(models.Model):
     resolved_tickets = models.IntegerField(default=0)
     sla_breaches = models.IntegerField(default=0)
 
+    category_counts = models.JSONField(default=dict)
+    priority_counts = models.JSONField(default=dict)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

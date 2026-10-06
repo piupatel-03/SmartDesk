@@ -1,5 +1,6 @@
 from django.utils import timezone
 from triage.models import Ticket, TicketEvent
+from .notifications import send_ticket_event
 
 ALLOWED_TRANSITIONS = {
     "Open" : ["In Progress"],
@@ -31,6 +32,15 @@ def update_ticket_status(ticket, new_status):
         ticket=ticket,
         event_type="STATUS_CHANGED",
         description=f"Status changed from {old_status} to {new_status}"
+    )
+
+    send_ticket_event(
+        ticket,
+        "ticket.status_changed",
+        {
+            "old_status" : old_status,
+            "new_status" : new_status,
+        },
     )
 
     return ticket
