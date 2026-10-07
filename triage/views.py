@@ -8,7 +8,7 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db import connection
 from django.conf import settings
 import redis
-
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework import status
 from .permissions import IsManagerOrAgent, IsManager
 from rest_framework.views import APIView
@@ -27,8 +27,13 @@ class CustomerListCreateView(generics.ListCreateAPIView):
     serializer_class = CustomerSerializer
     permission_classes = [IsAuthenticated]
 
+class PublicTicketThrottle(AnonRateThrottle):
+    scope = "anon"
+
+
 class TicketListCreateView(generics.ListCreateAPIView):
     serializer_class = TicketSerializer
+    throttle_classes = [PublicTicketThrottle]
 
     def get_permissions(self):
         if self.request.method == "POST":

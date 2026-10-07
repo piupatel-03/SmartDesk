@@ -1,5 +1,6 @@
 import json
 
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.utils import timezone
 
@@ -15,10 +16,14 @@ class TicketConsumer(AsyncWebsocketConsumer):
 
         self.user = user
 
-        if user.groups.filter(name="Manager").exists():
+        role = await self.get_user_role(user)
+
+        if role == "Manager":
             self.group_name = "managers"
-        elif user.groups.filter(name="Agent").exists():
+
+        elif role == "Agent":
             self.group_name = f"agent_{user.id}"
+
         else:
             await self.close(code=4003)
             return
@@ -39,6 +44,16 @@ class TicketConsumer(AsyncWebsocketConsumer):
                 "timestamp": timezone.now().isoformat(),
             })
         )
+
+    @database_sync_to_async
+    def get_user_role(self, user):
+        if user.groups.filter(name="Manager").exists():
+            return "Manager"
+
+        if user.groups.filter(name="Agent").exists():
+            return "Agent"
+
+        return None
 
     async def disconnect(self, close_code):
         if hasattr(self, "group_name"):
