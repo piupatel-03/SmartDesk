@@ -274,19 +274,10 @@ class TicketTransitionView(APIView):
 class TicketStatsView(APIView):
     queryset = DailyReport.objects.all().order_by("-report_date")
     serializer_class = DailyReportSerializer
-    permission_classes = [IsManagerOrAgent]
+    permission_classes = [IsManager]
 
     def get(self, request):
-        user = request.user
-
-        if user.groups.filter(name="Manager").exists():
-            tickets = Ticket.objects.all()
-
-        elif user.groups.filter(name="Agent").exists():
-            tickets = Ticket.objects.filter(assigned_agent=user)
-
-        else:
-            tickets = Ticket.objects.none()
+        tickets = Ticket.objects.all()
 
         data = {
             "total_tickets": tickets.count(),

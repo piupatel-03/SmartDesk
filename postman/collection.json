@@ -1,0 +1,54 @@
+{
+  "info": {
+    "_postman_id": "smartdesk-collection",
+    "name": "SmartDesk API",
+    "description": "SmartDesk Support Ticket Triage System API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "ticket_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": []
+    },
+    {
+      "name": "Tickets",
+      "item": []
+    },
+    {
+      "name": "Workflow",
+      "item": []
+    },
+    {
+      "name": "Reports",
+      "item": []
+    },
+    {
+      "name": "Health",
+      "item": []
+    },
+    {
+      "name": "Error Cases",
+      "item": []
+    }
+  ]
+}

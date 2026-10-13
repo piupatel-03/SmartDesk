@@ -57,10 +57,14 @@ class TicketConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         if hasattr(self, "group_name"):
-            await self.channel_layer.group_discard(
-                self.group_name,
-                self.channel_name,
-            )
+            try:
+                await self.channel_layer.group_discard(
+                    self.group_name,
+                    self.channel_name
+                )
+                
+            except Exception as exc:
+                print(f"WebSocket Redis cleanup failed: {exc}")
 
     async def receive(self, text_data):
         try:
